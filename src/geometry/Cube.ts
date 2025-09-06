@@ -3,68 +3,101 @@ import Drawable from '../rendering/gl/Drawable';
 import {gl} from '../globals';
 
 class Cube extends Drawable {
-    buffer: ArrayBuffer;
     indices: Uint32Array;
     positions: Float32Array;
     normals: Float32Array;
     center: vec4;
 
-    constructor(center: vec3, public sideLength: number){
+    constructor(center: vec3){
         super();
         this.center = vec4.fromValues(center[0], center[1], center[2], 1);
     }
 
     create(){
+        this.positions = new Float32Array(4 * 6 * 4); // 4 vertices/side * 6 sides * 4 floats/vertex
+        this.normals = new Float32Array(this.positions.length); // One normal per-position
+        this.indices = new Uint32Array(2 * 3 * 6); // 2 triangles/side * 3 vertices/triangle * 6 sides
+        // Iterate over each face
+        for(let faceIndex: number = 0; faceIndex < 6; faceIndex++) {
+            let [facePositions, faceNormals, faceIndices] = this.getFaceData(faceIndex, faceIndex * 4);
 
-    }
-
-    getFaceNormals() : Float32Array {
-        let faceNormals: Float32Array = new Float32Array(6 * 4);
-        let sign: number = 1;
-        for (let i: number = 0; i < 6; i++) {
-            faceNormals[i * 4 + Math.floor(i / 2)] = sign;
-            sign *= -1;
+            this.positions.set(facePositions, faceIndex * 4 * 4);
+            this.normals.set(faceNormals, faceIndex * 4 * 4);
+            this.indices.set(faceIndices, faceIndex * 2 * 3);
         }
-        return faceNormals;
+
+        this.generateIdx();
+        this.generatePos();
+        this.generateNor();
+
+        this.count = this.indices.length;
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.bufIdx);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.bufNor);
+        gl.bufferData(gl.ARRAY_BUFFER, this.normals, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.bufPos);
+        gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.STATIC_DRAW);
+
+        console.log(`Created cube`);
     }
 
-    faceIndexToNormal(faceIndex: number) : Float32Array {
-        let faceNormal: Float32Array = new Float32Array(4);
-        // This makes the order +X, -X, +Y, -Y, +Z, -Z
-        faceNormal[Math.floor(faceIndex / 2)] = 1 - (faceIndex & 1) * 2;
-        return faceNormal;
+    isFacePositive(faceIndex: number) : boolean {
+        return (faceIndex & 1) == 0;
     }
 
-    vertexIndexToPosition(vertexIndex: number): Float32Array {
-        let vertexPosition: Float32Array = new Float32Array(4);
-        /*
-        This will follow:
-        (1, 1, 1)
-        (-1, 1, 1)
-        (1, -1, 1),
-        (-1, -1, 1),
-        (1, 1, -1)
-        (-1, 1, -1)
-        (1, -1, -1),
-        (-1, -1, -1)
-         */
-        vertexPosition[0] = (vertexIndex & 1) == 0 ? 1 : -1;
-        vertexPosition[1] = (vertexIndex & 2) == 0 ? 1 : -1;
-        vertexPosition[2] = (vertexIndex & 4) == 0 ? 1 : -1;
-        vertexPosition[3] = 1;
-        return vertexPosition;
+    faceIndexToAxis(faceIndex: number) : number {
+        return Math.floor(faceIndex / 2);
     }
 
-    getVertexPositions(): Float32Array {
-        let vertexPositions: Float32Array = new Float32Array(8 * 4);
-        for(let i: number = 0; i < 8; i++) {
-            let vertexPosition: Float32Array = this.vertexIndexToPosition(i);
-            vertexPositions[i * 4] = vertexPosition[0];
-            vertexPositions[i * 4 + 1] = vertexPosition[1];
-            vertexPositions[i * 4 + 2] = vertexPosition[2];
-            vertexPositions[i * 4 + 3] = vertexPosition[3];
+    // Returns positions, normals, and indices from a face index
+    getFaceData(faceIndex: number, startingIndex: number): [Float32Array, Float32Array, Uint32Array] {
+        let facePositions: Float32Array = new Float32Array(4 * 4);
+        let faceNormals: Float32Array = new Float32Array(4 * 4);
+
+        let faceAxisIndex = this.faceIndexToAxis(faceIndex);
+        let perpAxisIndex1 = (faceAxisIndex + 1) % 3;
+        let perpAxisIndex2 = (faceAxisIndex + 2) % 3;
+        if(!this.isFacePositive(faceIndex)){
+            [perpAxisIndex1, perpAxisIndex2] = [perpAxisIndex2, perpAxisIndex1];
         }
-        return vertexPositions;
+        /* In terms of perp axis 1 and 2, the order of vertices should be:
+            ++
+            -+,
+            --,
+            +-
+        */
+        let vertexPositions2D: number[] = [
+            1, 1,
+            -1, 1,
+            -1, -1,
+            1, -1];
+
+        let faceAxisValue = this.isFacePositive(faceIndex) ? 1 : -1;
+
+        for(let vertexIndex = 0; vertexIndex < 4; vertexIndex++){
+            facePositions[vertexIndex * 4 + faceAxisIndex] = faceAxisValue + this.center[faceAxisIndex];
+            facePositions[vertexIndex * 4 + perpAxisIndex1] = vertexPositions2D[vertexIndex * 2] + this.center[perpAxisIndex1];
+            facePositions[vertexIndex * 4 + perpAxisIndex2] = vertexPositions2D[vertexIndex * 2 + 1] + this.center[perpAxisIndex2];
+            facePositions[vertexIndex * 4 + 3] = 1;
+
+            console.log(facePositions[vertexIndex * 4]);
+            console.log(facePositions[vertexIndex * 4 + 1]);
+            console.log(facePositions[vertexIndex * 4 + 2]);
+            console.log();
+
+            faceNormals[vertexIndex * 4 + faceAxisIndex] = faceAxisValue;
+        }
+
+        let faceIndicesSource: number[] = [
+            0, 1, 2,
+            2, 3, 0
+        ];
+
+        let faceIndices: Uint32Array = Uint32Array.from(faceIndicesSource, (index) => index + startingIndex);
+
+        return [facePositions, faceNormals, faceIndices];
     }
 }
 
