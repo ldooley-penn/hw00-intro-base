@@ -31,7 +31,7 @@ class OpenGLRenderer {
     mat4.multiply(viewProj, camera.projectionMatrix, camera.viewMatrix);
     prog.setModelMatrix(model);
     prog.setViewProjMatrix(viewProj);
-    prog.setGeometryColor(color);
+    //prog.setGeometryColor(color); We now set color through a variable in main
 
     for (let drawable of drawables) {
       prog.draw(drawable);

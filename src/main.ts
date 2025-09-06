@@ -1,4 +1,4 @@
-import {vec3} from 'gl-matrix';
+import {vec3, vec4} from 'gl-matrix';
 const Stats = require('stats-js');
 import * as DAT from 'dat.gui';
 import Icosphere from './geometry/Icosphere';
@@ -14,12 +14,14 @@ import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
 const controls = {
   tesselations: 5,
   'Load Scene': loadScene, // A function pointer, essentially
+    'Color': '#ff0000',
 };
 
 let icosphere: Icosphere;
 let square: Square;
 let cube: Cube;
 let prevTesselations: number = 5;
+let prevColor = '#ffff00';
 
 function loadScene() {
   icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, controls.tesselations);
@@ -28,6 +30,15 @@ function loadScene() {
   square.create();
   cube = new Cube(vec3.fromValues(1, 0, 0));
   cube.create();
+}
+
+function parseHexadecimalColor(color: string) : vec4 {
+    let outColor : vec4 = [0, 0, 0, 1];
+    outColor[0] = parseInt(color.slice(1, 3), 16) / 255;
+    outColor[1] = parseInt(color.slice(3, 5), 16) / 255;
+    outColor[2] = parseInt(color.slice(5, 7), 16) / 255;
+
+    return outColor;
 }
 
 function main() {
@@ -43,6 +54,7 @@ function main() {
   const gui = new DAT.GUI();
   gui.add(controls, 'tesselations', 0, 8).step(1);
   gui.add(controls, 'Load Scene');
+  gui.addColor(controls, 'Color');
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement> document.getElementById('canvas');
@@ -68,6 +80,8 @@ function main() {
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/lambert-frag.glsl')),
   ]);
 
+  lambert.setGeometryColor(parseHexadecimalColor(controls.Color));
+
   // This function will be called every frame
   function tick() {
     camera.update();
@@ -79,6 +93,10 @@ function main() {
       prevTesselations = controls.tesselations;
       icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, prevTesselations);
       icosphere.create();
+    }
+    if(controls.Color != prevColor){
+        prevColor = controls.Color;
+        lambert.setGeometryColor(parseHexadecimalColor(controls.Color));
     }
     renderer.render(camera, lambert, [
       icosphere,
