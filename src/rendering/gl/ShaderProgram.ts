@@ -32,6 +32,7 @@ class ShaderProgram {
   unifTime: WebGLUniformLocation;
   unifResolution: WebGLUniformLocation;
   unifView: WebGLUniformLocation;
+  unifStepSize: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -54,6 +55,7 @@ class ShaderProgram {
     this.unifColor      = gl.getUniformLocation(this.prog, "u_Color");
     this.unifTime       = gl.getUniformLocation(this.prog, "u_Time");
     this.unifResolution = gl.getUniformLocation(this.prog, "u_Resolution");
+    this.unifStepSize   = gl.getUniformLocation(this.prog, "u_StepSize");
   }
 
   use() {
@@ -109,6 +111,13 @@ class ShaderProgram {
       this.use();
       if(this.unifResolution !== -1) {
           gl.uniform2f(this.unifResolution, x, y);
+      }
+  }
+
+  setStepSize(stepSize: number) {
+      this.use();
+      if(this.unifStepSize !== -1) {
+          gl.uniform1f(this.unifStepSize, stepSize);
       }
   }
 

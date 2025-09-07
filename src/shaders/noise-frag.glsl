@@ -8,6 +8,8 @@ uniform mat4 u_View;
 
 uniform float u_Time;
 
+uniform float u_StepSize;
+
 vec3 uCameraPosition = vec3(0, 0, 1);
 
 vec3 spherePos = vec3(0, 0, 0);
@@ -97,7 +99,7 @@ float rayMarch(vec3 start, vec3 dir, float stepSize, float maxDistance){
 }
 
 vec3 getCloudColor(vec3 pos, vec3 dir) {
-    float totalDensity = rayMarch(pos, dir, 0.05f, 3.f);
+    float totalDensity = rayMarch(pos, dir, u_StepSize, 3.f);
     float transmittance = 1.f - exp(-totalDensity);
     return vec3(transmittance);
 }
@@ -117,7 +119,8 @@ void main()
     // I am keeping a fixed camera position for now
     rayDir = (u_View * vec4(rayDir, 0.f)).xyz;
 
-    vec3 color = getCloudColor(rayPos, rayDir);
+    vec3 skyColor = vec3(0.2, 0.2, 0.9);
+    vec3 color = skyColor + getCloudColor(rayPos, rayDir);
 
     outColor = vec4(color, 1);
 }

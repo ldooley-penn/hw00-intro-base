@@ -8,6 +8,7 @@ import OpenGLRenderer from './rendering/gl/OpenGLRenderer';
 import Camera from './Camera';
 import {setGL} from './globals';
 import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
+import {GUIController} from "dat.gui";
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
@@ -16,6 +17,7 @@ const controls = {
   'Load Scene': loadScene, // A function pointer, essentially
     'Color': '#ff0000',
     'RenderClouds': false,
+    stepSize: 0.05,
 };
 
 let icosphere: Icosphere;
@@ -23,6 +25,7 @@ let square: Square;
 let cube: Cube;
 let prevTesselations: number = 5;
 let prevColor = '#ffff00';
+let prevStepSize = 0.05;
 
 let startTime: number = 0;
 
@@ -55,10 +58,24 @@ function main() {
 
   // Add controls to the gui
   const gui = new DAT.GUI();
-  gui.add(controls, 'tesselations', 0, 8).step(1);
-  gui.add(controls, 'Load Scene');
-  gui.addColor(controls, 'Color');
-  gui.add(controls, 'RenderClouds');
+    gui.add(controls, 'RenderClouds').onChange((value: boolean) => {
+        if(value){
+            gui.remove(tesselationControl);
+            gui.remove(loadSceneControl);
+            gui.remove(colorControl);
+            stepSizeControl = gui.add(controls, 'stepSize', 0.01, 0.1).step(0.01);
+        }
+        else{
+            tesselationControl = gui.add(controls, 'tesselations', 0, 8).step(1);
+            loadSceneControl = gui.add(controls, 'Load Scene');
+            colorControl = gui.addColor(controls, 'Color');
+            gui.remove(stepSizeControl);
+        }
+    });
+  let tesselationControl = gui.add(controls, 'tesselations', 0, 8).step(1);
+  let loadSceneControl = gui.add(controls, 'Load Scene');
+  let colorControl = gui.addColor(controls, 'Color');
+  let stepSizeControl : GUIController;
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement> document.getElementById('canvas');
@@ -90,6 +107,7 @@ function main() {
   ]);
 
   lambert.setGeometryColor(parseHexadecimalColor(controls.Color));
+  clouds.setStepSize(controls.stepSize);
 
   // This function will be called every frame
   function tick() {
@@ -106,6 +124,10 @@ function main() {
     if(controls.Color != prevColor){
         prevColor = controls.Color;
         lambert.setGeometryColor(parseHexadecimalColor(controls.Color));
+    }
+    if(controls.stepSize != prevStepSize){
+        prevStepSize = controls.stepSize;
+        clouds.setStepSize(controls.stepSize);
     }
 
     if(controls.RenderClouds){
