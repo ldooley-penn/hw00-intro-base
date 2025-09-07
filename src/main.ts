@@ -15,6 +15,7 @@ const controls = {
   tesselations: 5,
   'Load Scene': loadScene, // A function pointer, essentially
     'Color': '#ff0000',
+    'RenderClouds': false,
 };
 
 let icosphere: Icosphere;
@@ -57,6 +58,7 @@ function main() {
   gui.add(controls, 'tesselations', 0, 8).step(1);
   gui.add(controls, 'Load Scene');
   gui.addColor(controls, 'Color');
+  gui.add(controls, 'RenderClouds');
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement> document.getElementById('canvas');
@@ -82,6 +84,11 @@ function main() {
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/lambert-frag.glsl')),
   ]);
 
+  const clouds = new ShaderProgram([
+      new Shader(gl.VERTEX_SHADER, require('./shaders/noise-vert.glsl')),
+      new Shader(gl.FRAGMENT_SHADER, require('./shaders/noise-frag.glsl')),
+  ]);
+
   lambert.setGeometryColor(parseHexadecimalColor(controls.Color));
 
   // This function will be called every frame
@@ -101,11 +108,19 @@ function main() {
         lambert.setGeometryColor(parseHexadecimalColor(controls.Color));
     }
     lambert.setTime((Date.now() - startTime) / 1000);
-    renderer.render(camera, lambert, [
-      icosphere,
-      cube,
-      // square,
-    ]);
+    if(controls.RenderClouds){
+        clouds.setResolution(window.innerWidth, window.innerHeight);
+        renderer.render(camera, clouds, [
+            square
+        ]);
+    }
+    else{
+        renderer.render(camera, lambert, [
+            icosphere,
+            cube,
+            // square,
+        ]);
+    }
     stats.end();
 
     // Tell the browser to call `tick` again whenever it renders a new frame
