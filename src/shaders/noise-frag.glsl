@@ -4,9 +4,11 @@ precision highp float;
 
 uniform vec2 u_Resolution;
 
+uniform mat4 u_View;
+
 uniform float u_Time;
 
-vec3 uCameraPosition = vec3(0, 0, 2);
+vec3 uCameraPosition = vec3(0, 0, 1);
 
 vec3 spherePos = vec3(0, 0, 0);
 float sphereRadius = 1.f;
@@ -51,20 +53,53 @@ float noise(vec3 pos, float scale) {
     return minDistance;
 }
 
+bool inCloudBox(vec3 pos) {
+    vec3 minimum = vec3(-0.5, -0.5, -0.5);
+    vec3 maximum = vec3(0.5, 0.5, 0.5);
+    // step returns 0 if less than edge, 1 if greater than
+    // we want pos to be greater than the bottom and less than the top,
+    // which would give us a value of 1 here
+    vec3 s = step(minimum, pos) - step(maximum, pos);
+    return s.x * s.y * s.z > 0.f;
+}
+
 float density(vec3 pos) {
-    float noiseValue = noise(pos, 0.1);
-    noiseValue = smoothstep(0.f, 2.f, 1.f - noiseValue);
+    if(!inCloudBox(pos)){
+        return 0.f;
+    }
+    float scale = 0.25f;
+    float amplitude = 1.f;
+
+    float noiseValue = 0.f;
+
+    noiseValue += amplitude * noise(pos, scale);
+    scale *= 0.5f;
+    amplitude *= 0.5f;
+    for(int i = 0; i<1; i++){
+        // subtract out details for sharper edges
+        noiseValue -= amplitude * noise(pos, scale);
+        scale *= 0.5f;
+        amplitude *= 0.5f;
+    }
+
+    noiseValue = smoothstep(0.f, 1.f, 1.f - noiseValue);
     return noiseValue;
 }
 
-float rayMarch(vec3 start, vec3 dir, float stepSize, int iterations){
+float rayMarch(vec3 start, vec3 dir, float stepSize, float maxDistance){
 	float totalDensity = 0.f;
 	vec3 currentPos = start;
-	for(int i = 0; i<iterations; i++){
+	for(int i = 0; i<int(maxDistance/stepSize); i++){
 	    currentPos += stepSize * dir;
-		totalDensity += density(currentPos);
+		totalDensity += density(currentPos) * stepSize;
 	}
 	return totalDensity;
+}
+
+vec3 getCloudColor(vec3 pos, vec3 dir) {
+    float totalDensity = rayMarch(pos, dir, 0.05f, 3.f);
+    float transmittance = 1.f - exp(-totalDensity);
+    return vec3(transmittance);
 }
 
 void main()
@@ -79,9 +114,10 @@ void main()
     vec3 rayDir = normalize(vec3(xDir, yDir, -1.f));
     vec3 rayPos = uCameraPosition;
 
-    //vec3 color = rayMarch(rayPos, rayDir, 0.5, 1) * vec3(1);
+    // I am keeping a fixed camera position for now
+    rayDir = (u_View * vec4(rayDir, 0.f)).xyz;
 
-    vec3 color = vec3(density(vec3(uv, u_Time/10.f)));
+    vec3 color = getCloudColor(rayPos, rayDir);
 
     outColor = vec4(color, 1);
 }
