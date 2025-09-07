@@ -11,27 +11,59 @@ float sphereRadius = 1.f;
 
 out vec4 outColor;
 
-float density(vec3 pos){
-	return max(1.f - length(pos - spherePos), 0.f);
+// Credit to https://www.ronja-tutorials.com/post/024-white-noise/
+float random(vec3 pos) {
+    vec3 smallValue = sin(pos);
+    float value = dot(smallValue, vec3(12.9898, 78.233, 37.719));
+    value = fract(sin(value) * 143758.5453);
+    return value;
 }
 
-float rayMarch(vec3 start, vec3 dir, float stepSize, float end){
+float noise(vec3 pos, float scale) {
+    vec3 scaledPos = pos/scale;
+    vec3 cell = floor(scaledPos);
+
+    //return random(cell);
+
+    float totalWeight = 0.f;
+    float outNoise = 0.f;
+
+    for(int dx = 0; dx < 2; dx++) {
+        for(int dy = 0; dy < 2; dy++) {
+            for(int dz = 0; dz < 2; dz++) {
+                vec3 dCell = vec3(float(dx), float(dy), float(dz));
+                vec3 refCell = cell + dCell;
+                float refNoise = random(refCell);
+                float refDistance = distance(scaledPos, refCell);
+                float refWeight = 2.f - refDistance;
+
+                totalWeight += refWeight;
+                outNoise += refWeight * refNoise;
+            }
+        }
+    }
+
+    return outNoise / totalWeight;
+}
+
+float density(vec3 pos) {
+    return noise(pos, 0.01);
+}
+
+float rayMarch(vec3 start, vec3 dir, float stepSize, int iterations){
 	float totalDensity = 0.f;
-
 	vec3 currentPos = start;
-
-	for(float i = 0.f; i<floor(end/stepSize); i += 1.f){
+	for(int i = 0; i<iterations; i++){
+	    currentPos += stepSize * dir;
 		totalDensity += density(currentPos);
-		currentPos += stepSize * dir;
 	}
-
 	return totalDensity;
 }
 
 void main()
 {
 	float aspectRatio = u_Resolution.x/u_Resolution.y;
-	float xRange = 2.f * tan(1.f);
+	float xRange = 2.f * tan(0.5f);
 	float yRange = xRange / aspectRatio;
     vec2 uv = gl_FragCoord.xy/u_Resolution;
 
@@ -40,7 +72,7 @@ void main()
     vec3 rayDir = normalize(vec3(xDir, yDir, -1.f));
     vec3 rayPos = uCameraPosition;
 
-    vec3 color = rayMarch(rayPos, rayDir, 0.5, 1000.f) * vec3(1);
+    vec3 color = rayMarch(rayPos, rayDir, 0.5, 1) * vec3(1);
 
     outColor = vec4(color, 1);
 }
