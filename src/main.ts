@@ -23,6 +23,8 @@ let cube: Cube;
 let prevTesselations: number = 5;
 let prevColor = '#ffff00';
 
+let startTime: number = 0;
+
 function loadScene() {
   icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, controls.tesselations);
   icosphere.create();
@@ -98,6 +100,7 @@ function main() {
         prevColor = controls.Color;
         lambert.setGeometryColor(parseHexadecimalColor(controls.Color));
     }
+    lambert.setTime((Date.now() - startTime) / 1000);
     renderer.render(camera, lambert, [
       icosphere,
       cube,
@@ -118,6 +121,8 @@ function main() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.setAspectRatio(window.innerWidth / window.innerHeight);
   camera.updateProjectionMatrix();
+
+  startTime = Date.now();
 
   // Start the render loop
   tick();
