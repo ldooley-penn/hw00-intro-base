@@ -107,14 +107,16 @@ function main() {
         prevColor = controls.Color;
         lambert.setGeometryColor(parseHexadecimalColor(controls.Color));
     }
-    lambert.setTime((Date.now() - startTime) / 1000);
+
     if(controls.RenderClouds){
+        clouds.setTime((Date.now() - startTime) / 1000);
         clouds.setResolution(window.innerWidth, window.innerHeight);
         renderer.render(camera, clouds, [
             square
         ]);
     }
     else{
+        lambert.setTime((Date.now() - startTime) / 1000);
         renderer.render(camera, lambert, [
             icosphere,
             cube,
