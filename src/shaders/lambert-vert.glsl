@@ -48,7 +48,7 @@ void main()
 
     vec4 modelposition = u_Model * vs_Pos;   // Temporarily store the transformed vertex positions for use below
 
-    modelposition += vec4(sin(u_Time), cos(u_Time), sin(u_Time) * cos(u_Time), 0);
+    modelposition += vec4(sign(vs_Pos.x) * sin(u_Time), sign(vs_Pos.y) * cos(u_Time), sign(vs_Pos.z) * sin(u_Time) * cos(u_Time), 0);
 
     fs_LightVec = lightPos - modelposition;  // Compute the direction in which the light source lies
 

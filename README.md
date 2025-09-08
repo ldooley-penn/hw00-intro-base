@@ -17,7 +17,9 @@ with label "Color".
 I created a cube class and replaced the rendered sphere with it.
 I also have modified the lambert vertex shader to take in a time
 uniform and oscillate the cube around the screen based on the transform
-(sin(time), cos(time), sin(time) * cos(time)).
+(sin(time), cos(time), sin(time) * cos(time)), but I multiply
+each component of this transform by the sign of the respective vertex's
+component, to achieve a stretching animation.
 
 For the noise part of the assignment, I chose to implement
 voronoi noise with FBM in three dimensions, and raymarch through it 
