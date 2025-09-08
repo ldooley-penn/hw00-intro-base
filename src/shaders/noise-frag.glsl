@@ -124,7 +124,7 @@ void main()
     vec3 rayDir = normalize(vec3(xDir, yDir, -1.f));
     vec3 rayPos = uCameraPosition;
 
-    // I am keeping a fixed camera position for now
+    // I am keeping a fixed camera position
     rayDir = (u_View * vec4(rayDir, 0.f)).xyz;
 
     vec3 skyColor = vec3(0.2, 0.2, 0.9);
