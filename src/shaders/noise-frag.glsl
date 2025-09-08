@@ -10,7 +10,13 @@ uniform float u_Time;
 
 uniform float u_StepSize;
 
-vec3 uCameraPosition = vec3(0, 0, 1);
+uniform float u_InitialNoiseScale;
+
+uniform float u_NoisePersistence;
+
+uniform float u_NoiseLacunarity;
+
+vec3 uCameraPosition = vec3(0, 0, 1.5);
 
 vec3 spherePos = vec3(0, 0, 0);
 float sphereRadius = 1.f;
@@ -66,17 +72,19 @@ bool inCloudBox(vec3 pos) {
 }
 
 float density(vec3 pos) {
+    // No clouds will be outside of this box
     if(!inCloudBox(pos)){
         return 0.f;
     }
-    float scale = 0.25f;
+
+    float scale = u_InitialNoiseScale;
     float amplitude = 1.f;
 
     float noiseValue = 0.f;
 
     noiseValue += amplitude * noise(pos, scale);
-    scale *= 0.5f;
-    amplitude *= 0.5f;
+    scale *= u_NoiseLacunarity;
+    amplitude *= u_NoisePersistence;
     for(int i = 0; i<1; i++){
         // subtract out details for sharper edges
         noiseValue -= amplitude * noise(pos, scale);

@@ -33,6 +33,9 @@ class ShaderProgram {
   unifResolution: WebGLUniformLocation;
   unifView: WebGLUniformLocation;
   unifStepSize: WebGLUniformLocation;
+  unifInitialNoiseScale: WebGLUniformLocation;
+  unifNoisePersistence: WebGLUniformLocation;
+  unifNoiseLacunarity: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -56,6 +59,9 @@ class ShaderProgram {
     this.unifTime       = gl.getUniformLocation(this.prog, "u_Time");
     this.unifResolution = gl.getUniformLocation(this.prog, "u_Resolution");
     this.unifStepSize   = gl.getUniformLocation(this.prog, "u_StepSize");
+    this.unifInitialNoiseScale = gl.getUniformLocation(this.prog, "u_InitialNoiseScale");
+    this.unifNoisePersistence = gl.getUniformLocation(this.prog, "u_NoisePersistence");
+    this.unifNoiseLacunarity = gl.getUniformLocation(this.prog, "u_NoiseLacunarity");
   }
 
   use() {
@@ -118,6 +124,27 @@ class ShaderProgram {
       this.use();
       if(this.unifStepSize !== -1) {
           gl.uniform1f(this.unifStepSize, stepSize);
+      }
+  }
+
+  setInitialNoiseScale(scale: number) {
+      this.use();
+      if(this.unifInitialNoiseScale !== -1) {
+          gl.uniform1f(this.unifInitialNoiseScale, scale);
+      }
+  }
+
+  setNoisePersistence(persistence: number) {
+      this.use();
+      if(this.unifNoisePersistence !== -1) {
+          gl.uniform1f(this.unifNoisePersistence, persistence);
+      }
+  }
+
+  setNoiseLacunarity(lacunarity: number) {
+      this.use();
+      if(this.unifNoiseLacunarity !== -1) {
+          gl.uniform1f(this.unifNoiseLacunarity, lacunarity);
       }
   }
 

@@ -16,8 +16,11 @@ const controls = {
   tesselations: 5,
   'Load Scene': loadScene, // A function pointer, essentially
     'Color': '#ff0000',
-    'RenderClouds': false,
-    stepSize: 0.05,
+    'Render Clouds': false,
+    'Step Size': 0.05,
+    'Initial Noise Scale': 0.25,
+    'Noise Persistence': 0.5,
+    'Noise Lacunarity': 0.5,
 };
 
 let icosphere: Icosphere;
@@ -26,6 +29,9 @@ let cube: Cube;
 let prevTesselations: number = 5;
 let prevColor = '#ffff00';
 let prevStepSize = 0.05;
+let prevInitialNoiseScale = 0.25;
+let prevNoisePersistence = 0.5;
+let prevNoiseLacunarity = 0.5;
 
 let startTime: number = 0;
 
@@ -34,7 +40,7 @@ function loadScene() {
   icosphere.create();
   square = new Square(vec3.fromValues(0, 0, 0));
   square.create();
-  cube = new Cube(vec3.fromValues(1, 0, 0));
+  cube = new Cube(vec3.fromValues(0, 0, 0));
   cube.create();
 }
 
@@ -58,24 +64,33 @@ function main() {
 
   // Add controls to the gui
   const gui = new DAT.GUI();
-    gui.add(controls, 'RenderClouds').onChange((value: boolean) => {
+    gui.add(controls, 'Render Clouds').onChange((value: boolean) => {
         if(value){
             gui.remove(tesselationControl);
             gui.remove(loadSceneControl);
             gui.remove(colorControl);
-            stepSizeControl = gui.add(controls, 'stepSize', 0.01, 0.1).step(0.01);
+            stepSizeControl = gui.add(controls, 'Step Size', 0.01, 0.1).step(0.01);
+            initialNoiseScaleControl = gui.add(controls, 'Initial Noise Scale', 0.01, 0.5).step(0.01);
+            noisePersistenceControl = gui.add(controls, 'Noise Persistence', 0, 1).step(0.125);
+            noiseLacunarityControl = gui.add(controls, 'Noise Lacunarity', 0.125, 1).step(0.125);
         }
         else{
             tesselationControl = gui.add(controls, 'tesselations', 0, 8).step(1);
             loadSceneControl = gui.add(controls, 'Load Scene');
             colorControl = gui.addColor(controls, 'Color');
             gui.remove(stepSizeControl);
+            gui.remove(initialNoiseScaleControl);
+            gui.remove(noisePersistenceControl);
+            gui.remove(noiseLacunarityControl);
         }
     });
   let tesselationControl = gui.add(controls, 'tesselations', 0, 8).step(1);
   let loadSceneControl = gui.add(controls, 'Load Scene');
   let colorControl = gui.addColor(controls, 'Color');
   let stepSizeControl : GUIController;
+  let initialNoiseScaleControl : GUIController;
+  let noisePersistenceControl : GUIController;
+  let noiseLacunarityControl : GUIController;
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement> document.getElementById('canvas');
@@ -107,7 +122,10 @@ function main() {
   ]);
 
   lambert.setGeometryColor(parseHexadecimalColor(controls.Color));
-  clouds.setStepSize(controls.stepSize);
+  clouds.setStepSize(controls['Step Size']);
+  clouds.setInitialNoiseScale(controls['Initial Noise Scale']);
+  clouds.setNoisePersistence(controls['Noise Persistence']);
+  clouds.setNoiseLacunarity(controls['Noise Lacunarity']);
 
   // This function will be called every frame
   function tick() {
@@ -125,12 +143,24 @@ function main() {
         prevColor = controls.Color;
         lambert.setGeometryColor(parseHexadecimalColor(controls.Color));
     }
-    if(controls.stepSize != prevStepSize){
-        prevStepSize = controls.stepSize;
-        clouds.setStepSize(controls.stepSize);
+    if(controls['Step Size'] != prevStepSize){
+        prevStepSize = controls['Step Size'];
+        clouds.setStepSize(controls['Step Size']);
+    }
+    if(controls['Initial Noise Scale'] != prevInitialNoiseScale){
+        prevInitialNoiseScale = controls['Initial Noise Scale'];
+        clouds.setInitialNoiseScale(prevInitialNoiseScale);
+    }
+    if(controls['Noise Persistence'] != prevNoisePersistence){
+        prevNoisePersistence = controls['Noise Persistence'];
+        clouds.setNoisePersistence(prevNoisePersistence);
+    }
+    if(controls['Noise Lacunarity'] != prevNoiseLacunarity){
+        prevNoiseLacunarity = controls['Noise Lacunarity'];
+        clouds.setNoiseLacunarity(prevNoiseLacunarity);
     }
 
-    if(controls.RenderClouds){
+    if(controls["Render Clouds"]){
         clouds.setTime((Date.now() - startTime) / 1000);
         clouds.setResolution(window.innerWidth, window.innerHeight);
         renderer.render(camera, clouds, [
@@ -140,7 +170,7 @@ function main() {
     else{
         lambert.setTime((Date.now() - startTime) / 1000);
         renderer.render(camera, lambert, [
-            icosphere,
+            //icosphere,
             cube,
             // square,
         ]);
