@@ -27,6 +27,9 @@ this checkbox will change the GUI options to include a
 "Step Size" parameter for ray marching. The camera is still able to be
 rotated, but I fixed the camera position in the shader itself.
 
+You can edit noise parameters yourself as well via the "Initial Noise Scale",
+"Noise Persistence" and "Noise Lacunarity" sliders.
+
 ## Cloud Rendering Implementation Details
 ### Raymarching setup
 To render clouds with raymarching, I first used the Square class
